@@ -1,0 +1,6 @@
+{
+  "name": "NetRoute Audit - FortiGate & Cisco Routing Analyzer",
+  "description": "Parse and audit FortiGate firewall and Cisco router configurations for static, dynamic (OSPF/BGP), and SD-WAN misconfigurations with AI remediation and PDF report generation.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
