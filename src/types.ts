@@ -1,64 +1,69 @@
 // src/types.ts
 
 export type VendorType = 'fortigate' | 'cisco' | 'auto';
+export type SeverityLevel = 'critical' | 'high' | 'medium' | 'low' | 'info';
+export type CategoryType = 'routing' | 'compliance' | 'threat' | 'vpn' | 'firewall';
 
-export interface NetworkInterface {
+export interface InterfaceConfig {
   name: string;
   ip?: string;
-  mask?: string; // Added mask to match parser
+  mask?: string;
   status?: 'up' | 'down';
-  vlan?: number;
-  zone?: string; // Added for FortiGate zones
   rawLine?: number;
 }
 
 export interface StaticRoute {
-  id?: string;
-  vendor: VendorType;
+  id: string;
   destination: string;
   gateway?: string;
   device?: string;
   distance: number;
   priority?: number;
-  weight?: number;
-  comment?: string;
-  blackhole?: boolean;
-  trackId?: number;
   rawLine?: number;
   rawConfig?: string;
 }
 
-export interface FirewallPolicy {
+export interface AuditFinding {
   id: string;
-  name?: string;
-  srcIntf?: string | string[]; // Flexible for single or multi-interface
-  dstIntf?: string | string[];
-  srcAddr?: string;
-  dstAddr?: string;
-  action: string; // 'accept' | 'deny' | 'permit'
-  utmEnabled: boolean;
-  service?: string;
-  ipsSensor?: string;
-  logTraffic?: string;
+  category: CategoryType;
+  severity: SeverityLevel;
+  title: string;
+  description: string;
+  deviceName: string; // Harmonized name
+  recommendation?: string;
+  remediation?: string;
+  impact?: string;
+  snippet?: string;
 }
 
-export interface VpnTunnel {
-  name: string;
-  ikeVersion: string;
-  proposal?: string;
-  dhGroup?: string;
-  remoteGw?: string;
-  pfsEnabled?: boolean;
-}
-
-export interface SdwanRule {
+export interface AuditScenario {
   id: string;
   name: string;
-  dstPrefix?: string;
-  healthCheckName?: string;
-  members?: string[];
-  priorityMembers?: string[];
-  rawLine?: number;
+  subtitle: string;
+  vendor: VendorType;
+  description: string;
+  configs: { title: string; vendor: VendorType; content: string }[];
+}
+
+export interface OspfConfig {
+  routerId?: string;
+  processId?: string;
+  areas: { areaId: string; networks: any[] }[];
+  passiveInterfaces: string[];
+}
+
+export interface BgpNeighbor {
+  ip: string;
+  remoteAs: number;
+  ebgpMultihop?: number;
+  activated: boolean;
+}
+
+export interface BgpConfig {
+  localAs?: number;
+  routerId?: string;
+  neighbors: BgpNeighbor[];
+  networks: string[];
 }
 
 export interface ParsedNetworkConfig {
@@ -67,32 +72,19 @@ export interface ParsedNetworkConfig {
   vendor: VendorType;
   detectedVendor: VendorType;
   hostname: string;
-  interfaces: NetworkInterface[];
+  interfaces: InterfaceConfig[];
   staticRoutes: StaticRoute[];
-  firewallPolicies?: FirewallPolicy[]; // Added
-  vpnTunnels?: VpnTunnel[];           // Added
-  ospf?: any; // Keeping simple for now
-  bgp?: any;
+  rawText: string; // Use rawText consistently
+  vpnTunnels?: any[];
+  firewallPolicies?: any[];
+  ospf?: OspfConfig;
+  bgp?: BgpConfig;
   sdwan?: any;
-  rawText: string;
-}
-
-export interface AuditFinding {
-  id: string;
-  category: 'routing' | 'compliance' | 'threat' | 'vpn' | 'firewall'; // Expanded
-  severity: 'critical' | 'high' | 'medium' | 'low' | 'info';
-  title: string;
-  description: string;
-  deviceName: string; // Used to identify which device the bug belongs to
-  recommendation?: string;
-  remediation?: string; // New: CLI Fix Commands
-  impact?: string;
-  snippet?: string;
 }
 
 export interface AnalysisSummary {
   riskScore: number;
-  healthGrade: string; // 'A' | 'B' | 'C' | 'D' | 'F'
+  healthGrade: string;
   criticalCount: number;
   highCount: number;
   mediumCount: number;

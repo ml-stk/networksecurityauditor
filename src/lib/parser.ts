@@ -208,3 +208,15 @@ function parseCiscoConfig(lines: string[], rawText: string, title: string): Pars
 }
 
 // ... Keep existing parseFortiGateOspf, Bgp, Sdwan helpers below ...
+// Add these to the bottom of src/lib/parser.ts
+function parseFortiGateOspf(lines: string[]): any {
+  return { areas: [], passiveInterfaces: [] };
+}
+
+function parseFortiGateBgp(lines: string[]): any {
+  return { neighbors: [], networks: [] };
+}
+
+function parseFortiGateSdwan(lines: string[]): any {
+  return { enabled: false, members: [], rules: [] };
+}
