@@ -6,7 +6,7 @@ import {defineConfig} from 'vite';
 export default defineConfig(() => {
   return {
     // Add the base path for GitHub Pages deployment
-    base: '/stk-netrouteanalyzer/',
+    base: '/stk-appliancesentry/',
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {
