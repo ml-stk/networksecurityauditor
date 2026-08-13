@@ -48,31 +48,49 @@ export function generateAuditPdf(
 
   currentY = 40;
 
-  // Metadata Card
+  // Metadata Card - REFIXED FOR VERTICAL ALIGNMENT (No more overlap)
   if (options.companyName || options.adminName || options.notes) {
+    const metaX = 18;
+    const contentWidth = 174; // 182 - margins
+    
+    // Calculate required height
+    let requiredHeight = 10; // padding
+    if (options.companyName) requiredHeight += 6;
+    if (options.adminName) requiredHeight += 6;
+    
+    let splitNotes: string[] = [];
+    if (options.notes) {
+      splitNotes = doc.splitTextToSize(`Notes: ${options.notes}`, contentWidth);
+      requiredHeight += (splitNotes.length * 5) + 2;
+    }
+
+    // Draw Box
     doc.setFillColor(...lightBg);
-    doc.roundedRect(14, currentY, 182, 22, 3, 3, 'F');
+    doc.roundedRect(14, currentY, 182, requiredHeight, 3, 3, 'F');
     doc.setDrawColor(226, 232, 240);
-    doc.roundedRect(14, currentY, 182, 22, 3, 3, 'D');
+    doc.roundedRect(14, currentY, 182, requiredHeight, 3, 3, 'D');
 
     doc.setTextColor(51, 65, 85);
-    doc.setFont('helvetica', 'bold');
     doc.setFontSize(9);
+    let textY = currentY + 7;
 
-    let metaX = 18;
     if (options.companyName) {
-      doc.text(`Organization: ${options.companyName}`, metaX, currentY + 8);
-      metaX += 60;
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Organization: ${options.companyName}`, metaX, textY);
+      textY += 6;
     }
     if (options.adminName) {
-      doc.text(`Administrator: ${options.adminName}`, metaX, currentY + 8);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Administrator: ${options.adminName}`, metaX, textY);
+      textY += 6;
     }
     if (options.notes) {
       doc.setFont('helvetica', 'normal');
-      doc.text(`Notes: ${options.notes}`, 18, currentY + 16);
+      doc.text(splitNotes, metaX, textY);
+      textY += (splitNotes.length * 5);
     }
 
-    currentY += 28;
+    currentY += requiredHeight + 10;
   }
 
   // Executive Summary Box
@@ -132,10 +150,10 @@ export function generateAuditPdf(
 
   const tableRows = summary.findings.map(f => [
     f.severity.toUpperCase(),
-    f.deviceName, // Changed from f.vendor
+    f.deviceName,
     f.title,
     f.category.replace('_', ' ').toUpperCase(),
-    f.description // Changed from f.summary
+    f.description
   ]);
 
   autoTable(doc, {
@@ -186,11 +204,9 @@ export function generateAuditPdf(
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(8.5);
       doc.setTextColor(51, 65, 85);
-      // Changed from rootCause to impact
       doc.text(`Impact: ${finding.impact || 'Potential security or connectivity risk.'}`, 18, currentY);
       currentY += 6;
 
-      // Draw Code Box for remediation string
       const codeLines = doc.splitTextToSize(finding.remediation, 160);
       const boxHeight = (codeLines.length * 4) + 6;
       
@@ -216,7 +232,7 @@ export function generateAuditPdf(
     doc.setPage(i);
     doc.setFontSize(8);
     doc.setTextColor(148, 163, 184);
-    doc.text(`Page ${i} of ${totalPages} - NetRoute Audit Report`, 105, 287, { align: 'center' });
+    doc.text(`Page ${i} of ${totalPages} - STK ApplianceSentry Audit Report`, 105, 287, { align: 'center' });
   }
 
   return doc;
