@@ -30,7 +30,7 @@ export const PdfExportModal: React.FC<PdfExportModalProps> = ({
           adminName,
           notes
         });
-        doc.save(`NetRoute-Audit-Report-${Date.now()}.pdf`);
+        doc.save(`STKApplianceSentry-Audit-Report-${Date.now()}.pdf`);
       } catch (err) {
         console.error('Failed to generate PDF:', err);
       } finally {

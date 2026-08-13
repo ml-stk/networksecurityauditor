@@ -33,7 +33,7 @@ export function generateAuditPdf(
   doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(20);
-  doc.text('NetRoute Security Audit', 14, 18);
+  doc.text('STK ApplianceSentry Audit', 14, 18);
 
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
