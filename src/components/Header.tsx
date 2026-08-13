@@ -45,12 +45,12 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
           <div>
             <div className="flex items-center space-x-2">
-              <span className="font-bold text-lg tracking-tight text-white">NetRoute</span>
+              <span className="font-bold text-lg tracking-tight text-white">STK ApplianceSentry</span>
               <span className="bg-blue-900/80 text-blue-300 text-xs font-semibold px-2 py-0.5 rounded border border-blue-700/50">
                 Audit v2.4
               </span>
             </div>
-            <p className="text-xs text-slate-400">FortiGate & Cisco Routing / SD-WAN Misconfig Analyzer</p>
+            <p className="text-xs text-slate-400">Network Appliances Configuration Analyzer</p>
           </div>
         </div>
 
