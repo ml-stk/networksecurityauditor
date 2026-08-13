@@ -2,7 +2,7 @@
   "name": "STK ApplianceSentry",
   "private": true,
   "version": "1.0.0",
-  "homepage": "https://ml-stk.github.io/stk-netrouteanalyzer/",
+  "homepage": "https://ml-stk.github.io/stk-appliancesentry/",
   "type": "module",
   "scripts": {
     "dev": "vite",
