@@ -33,20 +33,18 @@ export function generateAuditPdf(
   doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(20);
-  doc.text('NetRoute Audit Report', 14, 18);
+  doc.text('NetRoute Security Audit', 14, 18);
 
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
-  doc.text('FortiGate & Cisco Network Routing & SD-WAN Analysis', 14, 25);
+  doc.text('Multi-Vendor Firewall, VPN & Routing Analysis', 14, 25);
 
   const reportDate = new Date().toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
+    day: 'numeric'
   });
-  doc.text(`Generated: ${reportDate}`, 135, 25);
+  doc.text(`Generated: ${reportDate}`, 155, 25);
 
   currentY = 40;
 
@@ -109,12 +107,12 @@ export function generateAuditPdf(
 
   currentY += 44;
 
-  // AI Overview Text if available
+  // AI Assessment
   if (summary.aiOverview) {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(11);
     doc.setTextColor(...primaryColor);
-    doc.text('AI Strategic Assessment', 14, currentY);
+    doc.text('Strategic Security Assessment', 14, currentY);
     currentY += 6;
 
     doc.setFont('helvetica', 'normal');
@@ -129,72 +127,55 @@ export function generateAuditPdf(
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(12);
   doc.setTextColor(...primaryColor);
-  doc.text('Categorized Misconfiguration Audit Findings', 14, currentY);
+  doc.text('Categorized Audit Findings', 14, currentY);
   currentY += 4;
 
   const tableRows = summary.findings.map(f => [
     f.severity.toUpperCase(),
-    f.vendor.toUpperCase(),
+    f.deviceName, // Changed from f.vendor
     f.title,
     f.category.replace('_', ' ').toUpperCase(),
-    f.summary
+    f.description // Changed from f.summary
   ]);
 
   autoTable(doc, {
     startY: currentY,
-    head: [['Severity', 'Vendor', 'Finding Title', 'Category', 'Description']],
+    head: [['Severity', 'Device', 'Finding Title', 'Category', 'Description']],
     body: tableRows,
     theme: 'grid',
-    headStyles: {
-      fillColor: primaryColor,
-      textColor: [255, 255, 255],
-      fontStyle: 'bold',
-      fontSize: 8
-    },
-    styles: {
-      fontSize: 8,
-      cellPadding: 3,
-      overflow: 'linebreak'
-    },
+    headStyles: { fillColor: primaryColor, textColor: [255, 255, 255], fontSize: 8 },
+    styles: { fontSize: 8, cellPadding: 3 },
     columnStyles: {
       0: { cellWidth: 20, fontStyle: 'bold' },
-      1: { cellWidth: 22 },
-      2: { cellWidth: 45, fontStyle: 'bold' },
+      1: { cellWidth: 25 },
+      2: { cellWidth: 45 },
       3: { cellWidth: 30 },
-      4: { cellWidth: 65 }
+      4: { cellWidth: 62 }
     },
     didParseCell: (data) => {
       if (data.section === 'body' && data.column.index === 0) {
         const val = data.cell.raw as string;
         if (val === 'CRITICAL') data.cell.styles.textColor = [220, 38, 38];
         else if (val === 'HIGH') data.cell.styles.textColor = [234, 88, 12];
-        else if (val === 'MEDIUM') data.cell.styles.textColor = [202, 138, 4];
-        else data.cell.styles.textColor = [37, 99, 235];
       }
     }
   });
 
-  // Get y after table
   currentY = (doc as any).lastAutoTable.finalY + 12;
 
-  // Remediation Section
+  // Remediation Guide
   if (options.includeRemediationCommands !== false && summary.findings.length > 0) {
-    if (currentY > 230) {
-      doc.addPage();
-      currentY = 20;
-    }
+    if (currentY > 230) { doc.addPage(); currentY = 20; }
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(12);
-    doc.setTextColor(...primaryColor);
-    doc.text('Administrator Remediation Script Guide', 14, currentY);
+    doc.text('Remediation Script & Fix Guide', 14, currentY);
     currentY += 8;
 
     summary.findings.forEach((finding, idx) => {
-      if (currentY > 240) {
-        doc.addPage();
-        currentY = 20;
-      }
+      if (!finding.remediation) return;
+      
+      if (currentY > 230) { doc.addPage(); currentY = 20; }
 
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(10);
@@ -205,44 +186,37 @@ export function generateAuditPdf(
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(8.5);
       doc.setTextColor(51, 65, 85);
-      doc.text(`Root Cause: ${finding.rootCause}`, 18, currentY);
-      currentY += 4.5;
+      // Changed from rootCause to impact
+      doc.text(`Impact: ${finding.impact || 'Potential security or connectivity risk.'}`, 18, currentY);
+      currentY += 6;
 
-      finding.remediationCommands.forEach(cmd => {
-        if (currentY > 245) {
-          doc.addPage();
-          currentY = 20;
-        }
+      // Draw Code Box for remediation string
+      const codeLines = doc.splitTextToSize(finding.remediation, 160);
+      const boxHeight = (codeLines.length * 4) + 6;
+      
+      if (currentY + boxHeight > 270) { doc.addPage(); currentY = 20; }
 
-        doc.setFillColor(15, 23, 42); // Code box dark slate
-        const boxHeight = Math.max(12, cmd.cliCommands.length * 4 + 6);
-        doc.roundedRect(18, currentY, 174, boxHeight, 2, 2, 'F');
-
-        doc.setTextColor(148, 163, 184); // Light text
-        doc.setFont('courier', 'normal');
-        doc.setFontSize(7.5);
-
-        let codeY = currentY + 4;
-        cmd.cliCommands.forEach(line => {
-          doc.text(line, 22, codeY);
-          codeY += 4;
-        });
-
-        currentY += boxHeight + 6;
-      });
-
-      currentY += 4;
+      doc.setFillColor(15, 23, 42); 
+      doc.roundedRect(18, currentY, 174, boxHeight, 1, 1, 'F');
+      
+      doc.setTextColor(148, 163, 184);
+      doc.setFont('courier', 'normal');
+      doc.setFontSize(7.5);
+      
+      doc.text(codeLines, 22, currentY + 4);
+      
+      currentY += boxHeight + 8;
+      doc.setFont('helvetica', 'normal');
     });
   }
 
-  // Footer Page Numbers
+  // Footer
   const totalPages = doc.getNumberOfPages();
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
-    doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
     doc.setTextColor(148, 163, 184);
-    doc.text(`Page ${i} of ${totalPages} - NetRoute Audit`, 105, 287, { align: 'center' });
+    doc.text(`Page ${i} of ${totalPages} - NetRoute Audit Report`, 105, 287, { align: 'center' });
   }
 
   return doc;

@@ -2,7 +2,17 @@
 
 export type VendorType = 'fortigate' | 'cisco' | 'auto';
 export type SeverityLevel = 'critical' | 'high' | 'medium' | 'low' | 'info';
-export type CategoryType = 'routing' | 'compliance' | 'threat' | 'vpn' | 'firewall';
+
+// Updated to include all categories used in the UI and Logic
+export type CategoryType = 
+  | 'routing' 
+  | 'compliance' 
+  | 'threat' 
+  | 'vpn' 
+  | 'firewall' 
+  | 'sdwan' 
+  | 'static_routing' 
+  | 'dynamic_routing';
 
 export interface InterfaceConfig {
   name: string;
@@ -23,26 +33,27 @@ export interface StaticRoute {
   rawConfig?: string;
 }
 
-export interface AuditFinding {
-  id: string;
-  category: CategoryType;
-  severity: SeverityLevel;
-  title: string;
-  description: string;
-  deviceName: string; // Harmonized name
-  recommendation?: string;
-  remediation?: string;
-  impact?: string;
-  snippet?: string;
+export interface SdwanHealthCheck {
+  name: string;
+  server?: string;
+  members: string[];
 }
 
-export interface AuditScenario {
+export interface SdwanRule {
   id: string;
   name: string;
-  subtitle: string;
-  vendor: VendorType;
-  description: string;
-  configs: { title: string; vendor: VendorType; content: string }[];
+  dstPrefix?: string;
+  healthCheckName?: string;
+  members?: string[];
+  priorityMembers?: string[];
+  rawLine?: number;
+}
+
+export interface SdwanConfig {
+  enabled: boolean;
+  members: any[];
+  healthChecks: SdwanHealthCheck[];
+  rules: SdwanRule[];
 }
 
 export interface OspfConfig {
@@ -66,6 +77,22 @@ export interface BgpConfig {
   networks: string[];
 }
 
+export interface AuditFinding {
+  id: string;
+  category: CategoryType;
+  severity: SeverityLevel;
+  title: string;
+  description: string;
+  deviceName: string;
+  recommendation?: string;
+  remediation?: string; 
+  impact?: string;
+  snippet?: string;
+  // Temporary legacy fields to satisfy PDF generator during transition
+  rootCause?: string;
+  remediationCommands?: string[];
+}
+
 export interface ParsedNetworkConfig {
   id: string;
   title: string;
@@ -74,12 +101,12 @@ export interface ParsedNetworkConfig {
   hostname: string;
   interfaces: InterfaceConfig[];
   staticRoutes: StaticRoute[];
-  rawText: string; // Use rawText consistently
+  rawText: string;
   vpnTunnels?: any[];
   firewallPolicies?: any[];
   ospf?: OspfConfig;
   bgp?: BgpConfig;
-  sdwan?: any;
+  sdwan?: SdwanConfig; // Now defined
 }
 
 export interface AnalysisSummary {
@@ -94,4 +121,13 @@ export interface AnalysisSummary {
   findings: AuditFinding[];
   aiOverview: string;
   keyRecommendations: string[];
+}
+
+export interface AuditScenario {
+  id: string;
+  name: string;
+  subtitle: string;
+  vendor: VendorType;
+  description: string;
+  configs: { title: string; vendor: VendorType; content: string }[];
 }

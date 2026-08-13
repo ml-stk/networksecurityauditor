@@ -64,16 +64,23 @@ export const AuditFindings: React.FC<AuditFindingsProps> = ({ findings }) => {
     }
   };
 
-  const getCategoryLabel = (cat: CategoryType) => {
-    switch (cat) {
+// src/components/AuditFindings.tsx
+// Look for the icon helper function or category switcher
+  const getCategoryIcon = (category: CategoryType) => {
+    switch (category) {
       case 'static_routing':
-        return 'Static Routing';
-      case 'dynamic_routing':
-        return 'Dynamic Routing (OSPF/BGP)';
+      case 'routing':
+        return <RouteIcon />;
+      case 'vpn':
+        return <LockIcon />;
+      case 'firewall':
+        return <ShieldIcon />;
       case 'sdwan':
-        return 'SD-WAN & SLA';
+        return <ActivityIcon />;
+      case 'compliance':
+        return <ClipboardCheckIcon />;
       default:
-        return 'Hygiene & Security';
+        return <AlertTriangleIcon />;
     }
   };
 
