@@ -6,11 +6,13 @@ import { AuditFindings } from './components/AuditFindings';
 import { RouteInspector } from './components/RouteInspector';
 import { TopologyDiagram } from './components/TopologyDiagram';
 import { PdfExportModal } from './components/PdfExportModal';
+import { RemediationCard } from './components/RemediationCard'; // New Component
+import { SecurityAuditor } from './lib/auditEngine'; // New Logic
 import { SAMPLE_SCENARIOS } from './lib/sampleConfigs';
 import { parseNetworkConfig } from './lib/parser';
 import { runRuleEngine } from './lib/ruleEngine';
 import { AnalysisSummary, ParsedNetworkConfig, AuditFinding } from './types';
-import { ShieldCheck, Layers, Target, AlertCircle } from 'lucide-react';
+import { ShieldCheck, Layers, Target, AlertCircle, Wrench } from 'lucide-react';
 
 export default function App() {
   const [selectedScenarioId, setSelectedScenarioId] = useState<string>('fortigate-sdwan-blackhole');
@@ -78,12 +80,30 @@ export default function App() {
       // Step 2: Run local deterministic rule engine
       let allFindings: AuditFinding[] = runRuleEngine(parsedDevices);
 
-      // Filter findings based on selected focus mode if applicable
+      // Step 3: Run the new Security & VPN Auditor
+      inputConfigs.forEach(cfg => {
+        const securityResults = SecurityAuditor.analyze(cfg.content);
+        
+        // Map security findings into the application's AuditFinding format
+        const mappedFindings: AuditFinding[] = securityResults.map((sf, idx) => ({
+          id: `sec-${cfg.id}-${idx}`,
+          category: sf.category.toLowerCase() as any,
+          severity: sf.severity.toLowerCase() as any,
+          title: sf.issue,
+          description: sf.recommendation,
+          remediation: sf.remediationCmd, // Attached for the RemediationCard
+          deviceName: cfg.title
+        }));
+
+        allFindings = [...allFindings, ...mappedFindings];
+      });
+
+      // Filter findings based on selected focus mode
       if (auditFocus !== 'comprehensive') {
         allFindings = allFindings.filter(f => f.category === auditFocus);
       }
 
-      // Step 3: Compute risk metrics and counts
+      // Step 4: Compute risk metrics and counts
       let critical = 0, high = 0, medium = 0, low = 0, info = 0;
       allFindings.forEach(f => {
         if (f.severity === 'critical') critical++;
@@ -93,7 +113,7 @@ export default function App() {
         else info++;
       });
 
-      const riskScore = Math.min(100, critical * 35 + high * 20 + medium * 10 + low * 2);
+      const riskScore = Math.min(100, (critical * 35) + (high * 20) + (medium * 10) + (low * 2));
       const healthGrade = riskScore < 15 ? 'A' : riskScore < 40 ? 'B' : riskScore < 70 ? 'C' : riskScore < 90 ? 'D' : 'F';
 
       const summaryResult: AnalysisSummary = {
@@ -106,11 +126,11 @@ export default function App() {
         infoCount: info,
         parsedDevices,
         findings: allFindings,
-        aiOverview: `Local offline audit completed successfully for ${parsedDevices.length} device(s) under focus mode '${auditFocus}'. Evaluated against routing baseline, PCI-DSS compliance checks, and threat posture rules.`,
+        aiOverview: `Security-enhanced audit completed for ${parsedDevices.length} device(s). Integrated VPN crypto-analysis and firewall policy hardening checks.`,
         keyRecommendations: [
-          'Verify that all edge firewall policies explicitly enforce UTM inspection sensors.',
-          'Review routing tables to eliminate potential blackholes or asymmetric paths.',
-          'Ensure administrative access is restricted to secure management subnets.'
+          'Update legacy VPN IKE/IPsec proposals to AES-256/GCM.',
+          'Review and prune "Any-Any" firewall policies identified in the audit.',
+          'Verify that all management interfaces have insecure protocols (Telnet/HTTP) disabled.'
         ]
       };
 
@@ -153,8 +173,8 @@ export default function App() {
           <div className="flex items-center space-x-3">
             <Target className="h-6 w-6 text-blue-400" />
             <div>
-              <h3 className="text-sm font-bold text-white">Offline Audit Focus Mode</h3>
-              <p className="text-xs text-slate-400">Filter deterministic checks across routing, compliance, or threat posturing.</p>
+              <h3 className="text-sm font-bold text-white">Enhanced Security Audit</h3>
+              <p className="text-xs text-slate-400">Analyzing Routing, VPN Crypto-standards, and Firewall Policy integrity.</p>
             </div>
           </div>
           <select
@@ -167,6 +187,7 @@ export default function App() {
             <option value="routing">Routing & SD-WAN Analysis</option>
             <option value="compliance">Security Compliance (PCI-DSS/CIS)</option>
             <option value="threat">Threat Profile & UTM Audit</option>
+            <option value="vpn">VPN & Encryption Standards</option>
           </select>
         </div>
 
@@ -183,6 +204,24 @@ export default function App() {
           <>
             <section>
               <ExecutiveSummary summary={analysisSummary} />
+            </section>
+
+            {/* New Remediation Section */}
+            <section className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <Wrench className="h-4 w-4 text-orange-400" />
+                <h3 className="text-sm font-bold text-white">Actionable Security Remediations</h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {analysisSummary.findings
+                  .filter(f => f.remediation)
+                  .map((finding) => (
+                    <RemediationCard key={finding.id} finding={finding} />
+                  ))}
+              </div>
+              {analysisSummary.findings.filter(f => f.remediation).length === 0 && (
+                <p className="text-xs text-slate-500 italic">No automated remediation scripts available for current findings.</p>
+              )}
             </section>
 
             <section>
@@ -216,7 +255,7 @@ export default function App() {
       </main>
 
       <footer className="bg-slate-900 border-t border-slate-800 text-slate-500 text-xs py-4 text-center">
-        <p>NetRoute Audit • 100% Client-Side Multi-Vendor Firewall & Routing Compliance Engine</p>
+        <p>NetRoute Audit • Multi-Vendor VPN & Firewall Compliance Engine</p>
       </footer>
 
       {analysisSummary && (
